@@ -36,7 +36,3 @@ class Accelerometer:
     @staticmethod
     def calc_scale_factor(mean_f_up, mean_f_down, gravity):
         return  (mean_f_up - mean_f_down - 2 * gravity)/(2 * gravity)
-
-        
-
-    
