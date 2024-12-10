@@ -34,25 +34,28 @@ class Accelerometer:
     
     def get_M_errors_matrix(self) -> np.ndarray:
         f_dict = self.get_calibration_data()
-        # print(np.shape(f_dict["fx_down"]))
         f = np.hstack((f_dict["fx_down"], f_dict["fx_up"], f_dict["fy_down"], f_dict["fy_up"], f_dict["fz_down"], f_dict["fz_up"]))
-        # print(np.shape(f))
-
         M = self.calc_M_matrix(f, f_dict['g'])
         return M 
 
     @staticmethod
-    def calc_bias(mean_f_up, mean_f_down):
-        return (mean_f_up + mean_f_down)/2
+    def calc_bias(mean_f_up, mean_f_down) -> np.ndarray:
+        return np.array((mean_f_up + mean_f_down)/2)
     
     @staticmethod
-    def calc_scale_factor(mean_f_up, mean_f_down, gravity):
-        return  (mean_f_up - mean_f_down - 2 * gravity)/(2 * gravity)
+    def calc_scale_factor(mean_f_up, mean_f_down, gravity) -> np.ndarray:
+        return  np.array((mean_f_up - mean_f_down - 2 * gravity)/(2 * gravity))
 
     @staticmethod
     def calc_M_matrix(f: np.ndarray, g: float) -> np.ndarray:
-        G_mat = np.array([[-g, g, 0, 0, 0, 0], [0, 0, -g, g, 0, 0], [0, 0, 0, 0, -g, g]])
+        G_mat = np.array([[-g, g, 0, 0, 0, 0], 
+                          [0, 0, -g, g, 0, 0], 
+                          [0, 0, 0, 0, -g, g]])
         z = f - G_mat
-        A = np.array([[-g, g, 0, 0, 0, 0], [0, 0, -g, g, 0, 0], [0, 0, 0, 0, -g, g], [1,1,1,1,1,1]])
+        A = np.array([
+            [-g, g,  0, 0,  0, 0], 
+            [0,  0, -g, g,  0, 0], 
+            [0,  0,  0, 0, -g, g], 
+            [1,  1,  1, 1,  1, 1]])
         M = z @ A.T @ np.linalg.inv(A @ A.T)
         return M
