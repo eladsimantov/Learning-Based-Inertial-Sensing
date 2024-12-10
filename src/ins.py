@@ -8,16 +8,16 @@ class Accelerometer:
         return 
     
     def set_calibration_data(self, 
-                             fx_up: np.array, fx_down: np.array, 
-                             fy_up: np.array, fy_down: np.array, 
-                             fz_up: np.array, fz_down: np.array, 
+                             fx_down: np.ndarray, fx_up : np.ndarray, 
+                             fy_down: np.ndarray, fy_up: np.ndarray, 
+                             fz_down: np.ndarray, fz_up: np.ndarray, 
                              gravity: float):
-        self._fx_up = fx_up
         self._fx_down = fx_down
-        self._fy_up = fy_up
+        self._fx_up = fx_up
         self._fy_down = fy_down
-        self._fz_up = fz_up
+        self._fy_up = fy_up
         self._fz_down = fz_down
+        self._fz_up = fz_up
         self._gravity = gravity
         return
 
@@ -32,9 +32,12 @@ class Accelerometer:
             'g': self._gravity
         }
     
-    def get_M_errors_matrix(self) -> np.array:
+    def get_M_errors_matrix(self) -> np.ndarray:
         f_dict = self.get_calibration_data()
-        f = np.array([f_dict["fx_down"], f_dict["fx_up"], f_dict["fy_down"], f_dict["fy_up"], f_dict["fx_down"], f_dict["fz_up"]])
+        # print(np.shape(f_dict["fx_down"]))
+        f = np.hstack((f_dict["fx_down"], f_dict["fx_up"], f_dict["fy_down"], f_dict["fy_up"], f_dict["fz_down"], f_dict["fz_up"]))
+        # print(np.shape(f))
+
         M = self.calc_M_matrix(f, f_dict['g'])
         return M 
 
@@ -47,7 +50,7 @@ class Accelerometer:
         return  (mean_f_up - mean_f_down - 2 * gravity)/(2 * gravity)
 
     @staticmethod
-    def calc_M_matrix(f: np.array, g: float) -> np.array:
+    def calc_M_matrix(f: np.ndarray, g: float) -> np.ndarray:
         G_mat = np.array([[-g, g, 0, 0, 0, 0], [0, 0, -g, g, 0, 0], [0, 0, 0, 0, -g, g]])
         z = f - G_mat
         A = np.array([[-g, g, 0, 0, 0, 0], [0, 0, -g, g, 0, 0], [0, 0, 0, 0, -g, g], [1,1,1,1,1,1]])
