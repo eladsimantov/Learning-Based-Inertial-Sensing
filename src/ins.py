@@ -48,6 +48,8 @@ class Accelerometer:
 
     @staticmethod
     def calc_M_matrix(f: np.ndarray, g: float) -> np.ndarray:
+        # The rational is: M @ A = z => M = z @ A^T @ (A @ A^T)^-1 = (Misalignment + ScaleFactor, bias) @(f;1)
+        
         G_mat = np.array([[-g, g, 0, 0, 0, 0], 
                           [0, 0, -g, g, 0, 0], 
                           [0, 0, 0, 0, -g, g]])
