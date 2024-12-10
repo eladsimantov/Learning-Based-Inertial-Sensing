@@ -7,6 +7,9 @@ class Accelerometer:
         self.__name = name
         return 
     
+    def get_sensor_name(self) -> str:
+        return self.__name
+    
     def set_calibration_data(self, 
                              fx_down: np.ndarray, fx_up : np.ndarray, 
                              fy_down: np.ndarray, fy_up: np.ndarray, 
