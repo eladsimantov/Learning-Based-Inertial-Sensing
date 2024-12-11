@@ -12,6 +12,7 @@ class Sensor:
     """
     def __init__(self, name: str):
         self.__name = name
+        self._calibration_data = {}
         return
     
     def get_sensor_name(self) -> str:
@@ -47,21 +48,19 @@ class Gyroscope(Sensor):
         return
         
     def get_M_errors_matrix(self) -> np.ndarray:
-        w_dict = self.get_calibration_data()
+        if self.get_calibration_data() == {}:
+            raise ValueError("Calibration data is not set\n Use set_calibration_data() method to set the calibration data")
+        w_dict = self.get_calibration_data() 
         w = np.hstack((w_dict["wx_left"], w_dict["wx_right"], w_dict["wy_left"], w_dict["wy_right"], w_dict["wz_left"], w_dict["wz_right"]))
         M = self.calc_M_matrix(w)
         return M
     
     def get_bias(self) -> np.ndarray:
         w_dict = self.get_calibration_data()
-        w_left = np.array([w_dict["wx_left"], w_dict["wy_left"], w_dict["wz_left"]])
-        w_right = np.array([w_dict["wx_right"], w_dict["wy_right"], w_dict["wz_right"]])
+        w_left = np.array([w_dict["wx_left"][0], w_dict["wy_left"][1], w_dict["wz_left"][2]])
+        w_right = np.array([w_dict["wx_right"][0], w_dict["wy_right"][1], w_dict["wz_right"][2]])
         bias = self.calc_bias(w_left, w_right)
         return bias
-    
-    @staticmethod
-    def calc_bias(mean_w_left, mean_w_right) -> np.ndarray:
-        return np.array((mean_w_left + mean_w_right)/2)
     
     @staticmethod
     def calc_M_matrix(w: np.ndarray) -> np.ndarray:
@@ -83,19 +82,27 @@ class Accelerometer(Sensor):
         return
     
     def get_M_errors_matrix(self) -> np.ndarray:
+        if self.get_calibration_data() == {}:
+            raise ValueError("Calibration data is not set\n Use set_calibration_data() method to set the calibration data")
         f_dict = self.get_calibration_data()
         f = np.hstack((f_dict["fx_down"], f_dict["fx_up"], f_dict["fy_down"], f_dict["fy_up"], f_dict["fz_down"], f_dict["fz_up"]))
         M = self.calc_M_matrix(f, f_dict['g'])
         return M 
 
-    @staticmethod
-    def calc_bias(mean_f_up, mean_f_down) -> np.ndarray:
-        return np.array((mean_f_up + mean_f_down)/2)
+    def get_bias(self) -> np.ndarray:
+        f_dict = self.get_calibration_data()
+        f_down = np.array([f_dict["fx_down"][0], f_dict["fy_down"][1], f_dict["fz_down"][2]])
+        f_up = np.array([f_dict["fx_up"][0], f_dict["fy_up"][1], f_dict["fz_up"][2]])
+        bias = self.calc_bias(f_down, f_up)
+        return bias
     
-    @staticmethod
-    def calc_scale_factor(mean_f_up, mean_f_down, gravity) -> np.ndarray:
-        return  np.array((mean_f_up - mean_f_down - 2 * gravity)/(2 * gravity))
-
+    def get_scale_factor(self) -> np.ndarray:
+        f_dict = self.get_calibration_data()
+        f_down = np.array([f_dict["fx_down"][0], f_dict["fy_down"][1], f_dict["fz_down"][2]])
+        f_up = np.array([f_dict["fx_up"][0], f_dict["fy_up"][1], f_dict["fz_up"][2]])
+        scale_factor = self.calc_scale_factor(f_up, f_down, f_dict['g'])
+        return np.diag([scale_factor[0][0], scale_factor[1][0], scale_factor[2][0]])
+    
     @staticmethod
     def calc_M_matrix(f: np.ndarray, g: float) -> np.ndarray:
         # The rational is: M @ A = z => M = z @ A^T @ (A @ A^T)^-1 = (Misalignment + ScaleFactor, bias) @(f;1)
