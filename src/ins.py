@@ -2,38 +2,58 @@
 import pandas as pd
 import numpy as np
 
-class Accelerometer:
+class Sensor:
+    """
+    This is the base class for all sensors. It contains the common attributes and methods.
+    """
     def __init__(self, name: str):
         self.__name = name
-        return 
+        return
     
     def get_sensor_name(self) -> str:
         return self.__name
     
-    def set_calibration_data(self, 
-                             fx_down: np.ndarray, fx_up : np.ndarray, 
-                             fy_down: np.ndarray, fy_up: np.ndarray, 
-                             fz_down: np.ndarray, fz_up: np.ndarray, 
-                             gravity: float):
-        self._fx_down = fx_down
-        self._fx_up = fx_up
-        self._fy_down = fy_down
-        self._fy_up = fy_up
-        self._fz_down = fz_down
-        self._fz_up = fz_up
-        self._gravity = gravity
+    def set_calibration_data(self, **kwargs):
+        self._calibration_data = {**kwargs}
         return
-
+    
     def get_calibration_data(self) -> dict:
-        return {
-            'fx_up': self._fx_up,
-            'fx_down': self._fx_down,
-            'fy_up': self._fy_up,
-            'fy_down': self._fy_down,
-            'fz_up': self._fz_up,
-            'fz_down': self._fz_down,
-            'g': self._gravity
-        }
+        return self._calibration_data
+        
+            
+class Gyroscope(Sensor):
+    def __init__(self, name: str):
+        super().__init__(name)
+        return
+        
+    def get_M_errors_matrix(self) -> np.ndarray:
+        w_dict = self.get_calibration_data()
+        w = np.hstack((w_dict["wx_left"], w_dict["wx_right"], w_dict["wy_left"], w_dict["wy_right"], w_dict["wz_left"], w_dict["wz_right"]))
+        M = self.calc_M_matrix(w)
+        return M
+    
+    @staticmethod
+    def calc_bias(mean_w_left, mean_w_right) -> np.ndarray:
+        return np.array((mean_w_left + mean_w_right)/2)
+    
+    @staticmethod
+    def calc_M_matrix(w: np.ndarray) -> np.ndarray:
+        # The rational is: M @ A = z => M = z @ A^T @ (A @ A^T)^-1 = (Misalignment + ScaleFactor, bias) @(w;1)
+        z = w
+        A = np.array([
+            [-1, 1, 0, 0, 0, 0], 
+            [0, 0, -1, 1, 0, 0], 
+            [0, 0, 0, 0, -1, 1], 
+            [1, 1, 1, 1, 1, 1]])
+        M = z @ A.T @ np.linalg.inv(A @ A.T)
+        return M
+    
+
+
+class Accelerometer(Sensor):
+    def __init__(self, name: str):
+        super().__init__(name)
+        return
     
     def get_M_errors_matrix(self) -> np.ndarray:
         f_dict = self.get_calibration_data()
@@ -52,7 +72,6 @@ class Accelerometer:
     @staticmethod
     def calc_M_matrix(f: np.ndarray, g: float) -> np.ndarray:
         # The rational is: M @ A = z => M = z @ A^T @ (A @ A^T)^-1 = (Misalignment + ScaleFactor, bias) @(f;1)
-        
         G_mat = np.array([[-g, g, 0, 0, 0, 0], 
                           [0, 0, -g, g, 0, 0], 
                           [0, 0, 0, 0, -g, g]])
