@@ -4,7 +4,11 @@ import numpy as np
 
 class Sensor:
     """
-    This is the base class for all sensors. It contains the common attributes and methods.
+    This is the base class for all sensors. 
+    It contains the common attributes and methods.
+    get_sensor_name() -> str: returns the name of the sensor
+    set_calibration_data(**kwargs): sets the calibration data for the sensor
+    get_calibration_data() -> dict: returns the calibration data for the sensor
     """
     def __init__(self, name: str):
         self.__name = name
@@ -14,6 +18,10 @@ class Sensor:
         return self.__name
     
     def set_calibration_data(self, **kwargs):
+        """
+        This method sets the calibration data for the sensor. 
+        Enter the calibration data as keyword arguments.
+        """
         self._calibration_data = {**kwargs}
         return
     
