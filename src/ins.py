@@ -9,10 +9,23 @@ class Sensor:
     get_sensor_name() -> str: returns the name of the sensor
     set_calibration_data(**kwargs): sets the calibration data for the sensor
     get_calibration_data() -> dict: returns the calibration data for the sensor
+    calc_bias(mean_positive: np.ndarray, mean_negative: np.ndarray) -> np.ndarray: 
+        returns the bias of the sensor assuming no misalignment
+    calc_scale_factor(mean_positive: np.ndarray, mean_negative: np.ndarray, forcing) -> np.ndarray:
+        returns the scale factor of the sensor assuming no misalignment
     """
-    def __init__(self, name: str):
+    def __init__(self, name: str, **kwargs):
+        """
+        name: str: name of the sensor
+        bias: np.ndarray: bias of the sensor as a 3x1 vector
+        scale_factor: np.ndarray: scale factor of the sensor as a diagonal 3x3 matrix
+        M_errors_matrix: np.ndarray: M matrix of the sensor as a 3x6 matrix
+        """
         self.__name = name
         self._calibration_data = {}
+        self._bias = kwargs["bias"] if "bias" in kwargs else None
+        self._scale_factor = kwargs["scale_factor"] if "scale_factor" in kwargs else None
+        self._M_errors_matrix = kwargs["M_errors_matrix"] if "M_errors_matrix" in kwargs else None
         return
     
     def get_sensor_name(self) -> str:
@@ -47,15 +60,19 @@ class Gyroscope(Sensor):
         super().__init__(name)
         return
         
-    def get_M_errors_matrix(self) -> np.ndarray:
+    def compute_M_errors_matrix(self) -> np.ndarray:
         if self.get_calibration_data() == {}:
             raise ValueError("Calibration data is not set\n Use set_calibration_data() method to set the calibration data")
         w_dict = self.get_calibration_data() 
         w = np.hstack((w_dict["wx_left"], w_dict["wx_right"], w_dict["wy_left"], w_dict["wy_right"], w_dict["wz_left"], w_dict["wz_right"]))
         M = self.calc_M_matrix(w)
+
+        # Save the M matrix to object if it is not already saved
+        if self._M_errors_matrix is None:
+            self._M_errors_matrix = M
         return M
     
-    def get_bias(self) -> np.ndarray:
+    def compute_bias(self) -> np.ndarray:
         w_dict = self.get_calibration_data()
         w_left = np.array([w_dict["wx_left"][0], w_dict["wy_left"][1], w_dict["wz_left"][2]])
         w_right = np.array([w_dict["wx_right"][0], w_dict["wy_right"][1], w_dict["wz_right"][2]])
@@ -81,22 +98,25 @@ class Accelerometer(Sensor):
         super().__init__(name)
         return
     
-    def get_M_errors_matrix(self) -> np.ndarray:
+    def compute_M_errors_matrix(self) -> np.ndarray:
         if self.get_calibration_data() == {}:
             raise ValueError("Calibration data is not set\n Use set_calibration_data() method to set the calibration data")
         f_dict = self.get_calibration_data()
         f = np.hstack((f_dict["fx_down"], f_dict["fx_up"], f_dict["fy_down"], f_dict["fy_up"], f_dict["fz_down"], f_dict["fz_up"]))
         M = self.calc_M_matrix(f, f_dict['g'])
+        # Save the M matrix to object if it is not already saved
+        if self._M_errors_matrix is None:
+            self._M_errors_matrix = M
         return M 
 
-    def get_bias(self) -> np.ndarray:
+    def compute_bias(self) -> np.ndarray:
         f_dict = self.get_calibration_data()
         f_down = np.array([f_dict["fx_down"][0], f_dict["fy_down"][1], f_dict["fz_down"][2]])
         f_up = np.array([f_dict["fx_up"][0], f_dict["fy_up"][1], f_dict["fz_up"][2]])
         bias = self.calc_bias(f_down, f_up)
         return bias
     
-    def get_scale_factor(self) -> np.ndarray:
+    def compute_scale_factor(self) -> np.ndarray:
         f_dict = self.get_calibration_data()
         f_down = np.array([f_dict["fx_down"][0], f_dict["fy_down"][1], f_dict["fz_down"][2]])
         f_up = np.array([f_dict["fx_up"][0], f_dict["fy_up"][1], f_dict["fz_up"][2]])
