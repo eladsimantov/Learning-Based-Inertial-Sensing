@@ -1,6 +1,8 @@
 # src/ins.py
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 class Sensor:
     """
@@ -53,6 +55,33 @@ class Sensor:
         For Accelerometer: forcing = g
         """
         return (mean_positive - mean_negative - 2 * forcing)/(2 * forcing)
+    
+    @staticmethod 
+    def plot_time_series(x_data: np.ndarray, y_data: np.ndarray, title: str, x_label: str):
+        fig, axs = plt.subplots(3, 1, figsize=(12, 12), sharex=True)
+        
+        axs[0].plot(x_data, y_data[:, 0], label='X-axis', color='r')
+        axs[0].set_title(f'{title} - X-axis')
+        axs[0].set_ylabel('X-axis')
+        axs[0].legend()
+        axs[0].grid(True)
+        
+        axs[1].plot(x_data, y_data[:, 1], label='Y-axis', color='g')
+        axs[1].set_title(f'{title} - Y-axis')
+        axs[1].set_ylabel('Y-axis')
+        axs[1].legend()
+        axs[1].grid(True)
+        
+        axs[2].plot(x_data, y_data[:, 2], label='Z-axis', color='b')
+        axs[2].set_title(f'{title} - Z-axis')
+        axs[2].set_xlabel(x_label)
+        axs[2].set_ylabel('Z-axis')
+        axs[2].legend()
+        axs[2].grid(True)
+        
+        plt.tight_layout()
+        plt.show()
+        return
         
             
 class Gyroscope(Sensor):
