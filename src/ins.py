@@ -89,17 +89,17 @@ class Gyroscope(Sensor):
         super().__init__(name)
         return
         
-    def compute_M_errors_matrix(self) -> np.ndarray:
-        if self.get_calibration_data() == {}:
-            raise ValueError("Calibration data is not set\n Use set_calibration_data() method to set the calibration data")
-        w_dict = self.get_calibration_data() 
-        w = np.hstack((w_dict["wx_left"], w_dict["wx_right"], w_dict["wy_left"], w_dict["wy_right"], w_dict["wz_left"], w_dict["wz_right"]))
-        M = self.calc_M_matrix(w)
+    # def compute_M_errors_matrix(self) -> np.ndarray:
+    #     if self.get_calibration_data() == {}:
+    #         raise ValueError("Calibration data is not set\n Use set_calibration_data() method to set the calibration data")
+    #     w_dict = self.get_calibration_data() 
+    #     w = np.hstack((w_dict["wx_left"], w_dict["wx_right"], w_dict["wy_left"], w_dict["wy_right"], w_dict["wz_left"], w_dict["wz_right"]))
+    #     M = self.calc_M_matrix(w)
 
-        # Save the M matrix to object if it is not already saved
-        if self._M_errors_matrix is None:
-            self._M_errors_matrix = M
-        return M
+    #     # Save the M matrix to object if it is not already saved
+    #     if self._M_errors_matrix is None:
+    #         self._M_errors_matrix = M
+    #     return M
     
     def compute_bias(self) -> np.ndarray:
         w_dict = self.get_calibration_data()
